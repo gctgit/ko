@@ -1,0 +1,169 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html;scharset=utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Knockout : Hello World example</title>
+		
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+		<script src="http://code.jquery.com/jquery-1.8.3.min.js"></script>
+
+		<style>
+			body { font-family: arial; font-size: 14px; }
+			.liveExample { padding: 1em; background-color: #EEEEDD; border: 1px solid #CCC; max-width: 655px; }
+			.liveExample input { font-family: Arial; }
+			.liveExample b { font-weight: bold; }
+			.liveExample p { margin-top: 0.9em; margin-bottom: 0.9em; }
+			.liveExample select[multiple] { width: 100%; height: 8em; }
+			.liveExample h2 { margin-top: 0.4em; font-weight: bold; font-size: 1.2em; }
+		</style>
+		<script type="text/javascript" src="../libs/knockout-2.2.0.debug.js"></script>
+		
+    </head>
+    <body>
+    	this is a test, again
+		<div class='liveExample'>   
+		<p>First name: <input data-bind='value: firstName' /></p> 
+		<p>Last name: <input data-bind='value: lastName' /></p> 
+		<h2>Hello, <span data-bind='text: fullName'> </span>!</h2>  
+		<p>可读写的全名: <input data-bind='value: formatFullName2' /></p> 
+		<br/>
+		<p>价格: <input data-bind='value: price' /></p>  
+		<p>可写价格: <input data-bind='value: formatPrice' /></p>
+		<HR>
+		<p>Enter a numeric value: <input data-bind="value: acceptedNumericValue"/></p>
+		<p>Enter a numeric value: <input data-bind="value: attemptedValue"/></p>
+		<div style="background:red" data-bind="visible: !lastInputWasValid(), text:attemptedValue_Err">That's not a number!</div>
+		<div style="background:yellow" data-bind="visible: !lastInputWasValid(), text:'haha, ' + attemptedValue_Err_val() +' is not a number!'">That's not a number!</div>
+		
+		<hr>
+		<button id="update" onclick="update()">update</button>
+		<button id="save" onclick="save()">save</button>
+		
+		
+		<table id="CustomerInquiryTable" border="0" class="table" style="width: 100%;">
+			<thead>         
+				<tr>
+					<th style="width: 15%; height: 25px">Last Name</th>
+					<th style="width: 15%">First Name</th>
+				</tr>   
+			</thead>
+			<tbody data-bind="foreach: Customers">
+				<tr>
+					<td><div data-bind="text: id "></div></td>
+					<td><div data-bind="text: memo "></div></td>
+		
+				</tr>
+			</tbody>
+		</table>
+
+		</div>
+
+    </body>
+	<script>
+		function save(){
+			debugger
+			alert(my.fullName() )
+			alert(my.formatFullName() )
+			alert(my.formatFullName2() )
+		
+		}
+		function update(){
+			debugger
+			my.firstName("gou")
+			my.lastName("chengtu")
+		
+		}
+	</script>
+	<script>
+			// Here's my data model
+			var ViewModel = function(first, last) {
+				this.Customers = ko.observableArray([
+					{ id: 1, memo: '2005-01,消费购买了水壶' },
+					{ id: 2, memo: '2006-03,消费购买了手机' },
+					{ id: 3, memo: '2006-10,消费购买了手机' }
+				]);
+				for (var i = 0; i < 5; i++) {
+					this.Customers.push({ id: i + 4, memo: '2005-01,消费购买了'+i+'个水壶' })
+				}
+
+			
+				this.firstName = ko.observable(first);
+				this.lastName = ko.observable(last);
+			 
+				this.fullName = ko.computed(function() {
+					// Knockout tracks dependencies automatically. It knows that fullName depends on firstName and lastName, because these get called when evaluating fullName.
+					return this.firstName() + " " + this.lastName();
+				}, this);
+				
+				
+				this.formatFullName =  ko.dependentObservable(function() {
+					return this.firstName() + "." + this.lastName();
+				},this);
+				
+				this.formatFullName2 =  ko.dependentObservable({
+					read: function () {
+						return this.firstName() + " " + this.lastName();
+					},
+					write: function (value) {
+						var lastSpacePos = value.lastIndexOf(" ");
+						if (lastSpacePos > 0) { // Ignore values with no space character
+							this.firstName(value.substring(0, lastSpacePos)); // Update "firstName"
+							this.lastName(value.substring(lastSpacePos + 1)); // Update "lastName"
+						}
+					},
+					owner: this
+				});
+				this.price = ko.observable("899");
+				this.formatPrice = ko.dependentObservable({
+					read: function () {
+						return "$" + parseFloat(this.price()).toFixed(2);
+					},
+					write: function (value) {
+						// Strip out unwanted characters, parse as float, then write the raw data back to the underlying "price" observable
+						value = parseFloat(value.replace(/[^\.\d]/g, ""));
+						this.price((isNaN(value) ? 0 : value).toFixed(2)); // Write to underlying storage
+					},
+					owner: this
+				});
+				
+				
+				this.acceptedNumericValue = ko.observable(123);
+				this.lastInputWasValid = ko.observable(true);
+				this.attemptedValue_Err_val = ko.observable("0");
+				this.attemptedValue_Err = ko.dependentObservable({
+					read : function(value){
+						return 'sorry, ' + this.attemptedValue_Err_val() +' is not a number!';
+					},
+					write : function(value){
+						this.attemptedValue_Err_val(value);
+					},
+					owner: this
+				});
+				
+				this.attemptedValue = ko.dependentObservable({
+					read: this.acceptedNumericValue,
+					write: function (value) {
+						if (isNaN(value)){
+							this.lastInputWasValid(false);
+							this.attemptedValue_Err(value);
+						} else {
+							this.lastInputWasValid(true);
+							this.acceptedNumericValue(value); // Write to underlying storage
+						}
+					},
+					owner: this
+				});
+	
+			};
+			
+			var my = new ViewModel("Planet", "Earth")
+			
+			ViewModel.prototype.formatFullName3s =  ko.dependentObservable(function() {
+					return this.firstName() + "_" + this.lastName();
+			},my);
+				
+			
+			ko.applyBindings(my); // This makes Knockout get to work
+		</script>
+</html>    
